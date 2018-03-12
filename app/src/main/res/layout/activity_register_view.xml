@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    android:scrollbars="none">
+
+    <RelativeLayout
+        android:id="@+id/title_bar"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:padding="25dp"
+        android:background="@color/title_bar_color">
+
+
+        <TextView
+            android:id="@+id/addrss_name_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+
+            android:text="注册"
+            android:textColor="@color/title_text_color"
+            android:textSize="35.0sp" />
+        <TextView
+            android:id="@+id/peizhi"
+            android:layout_width="wrap_content"
+            android:text="配置"
+            android:textColor="@color/title_text_color"
+            android:textSize="25.0sp"
+            android:layout_alignParentRight="true"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="0.5dip"
+        android:background="#cccccc" />
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:scrollbars="none">
+
+
+
+            <LinearLayout
+                android:id="@+id/ll_quick_login"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20.0dip"
+
+                android:orientation="vertical"
+                android:visibility="visible">
+                <TextView
+                    android:id="@+id/sn_text"
+                    android:text="pad序列号：1234456"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="5.0dip"
+                    android:padding="26.0dip"
+                    android:textSize="30sp"
+                    android:textColor="@color/title_text_color"
+                    />
+                <View
+                    android:layout_width="fill_parent"
+                    android:layout_height="0.5dip"
+                    android:background="#cccccc" />
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/white">
+
+                    <EditText
+                        android:id="@+id/pad_name"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:background="@null"
+                        android:hint="请输入pad名字"
+                        android:padding="26.0dip"
+                        android:textSize="30sp"
+                        android:scrollHorizontally="true"
+                        android:singleLine="true"
+                        android:textColorHint="@color/gray01"
+                         />
+
+
+                </RelativeLayout>
+                <View
+                    android:layout_width="fill_parent"
+                    android:layout_height="0.5dip"
+                    android:background="#cccccc" />
+
+
+
+
+            <Button
+                android:id="@+id/bt_get_check_code"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10.0dip"
+                android:layout_marginRight="10.0dip"
+                android:layout_marginTop="20.0dip"
+                android:background="@drawable/round_btn_orange_self_selector"
+                android:text="注册"
+                android:padding="20dp"
+                android:textColor="@android:color/white"
+                android:textSize="28.0sp"
+                android:textStyle="bold"
+                android:visibility="visible" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
