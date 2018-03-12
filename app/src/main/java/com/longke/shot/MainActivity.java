@@ -229,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
                 case 4://结束
-                    mVideoView.stopPlayback();
+//                    mVideoView.stopPlayback();
                     if (isViSitor.equals("1")) {
                         mKaishiTitle.setText("重新");
                         mShotBtn.setText("开始");
