@@ -1599,7 +1599,7 @@ public class MainActivity extends AppCompatActivity {
                             isViSitor = (String) SharedPreferencesUtil.get(MainActivity.this, IS_VISITOR, "2");
                             mTitleTv.setText("考核模式");
                             if (isViSitor.equals("1")) {
-                                mKaishiTitle.setText("准备j");
+                                mKaishiTitle.setText("准备");
                                 mShotBtn.setText("射击");
                                 mReadyLayout.setBackgroundResource(R.mipmap.btn01);
                                 mReadyLayout.setClickable(true);
