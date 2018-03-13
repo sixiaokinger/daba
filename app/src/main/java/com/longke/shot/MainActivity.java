@@ -556,6 +556,21 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // 检查网络
+    private void checkNetwork() {
+        ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
+        service.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                if (mqttAndroidClient != null) {
+                    if(!mqttAndroidClient.isConnected()) {
+                        reconnectIfNecessary();
+                    }
+                }
+            }
+        }, 1, 1, TimeUnit.SECONDS);
+    }
+
 
     /**
      * 建立连接
@@ -610,7 +625,7 @@ public class MainActivity extends AppCompatActivity {
         mqttConnectOptions.setAutomaticReconnect(true);
         mqttConnectOptions.setCleanSession(false);
         startReconnect();
-
+        checkNetwork();
     }
     /**
      * Checkes the current connectivity
