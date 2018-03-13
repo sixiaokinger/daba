@@ -2,10 +2,15 @@ package com.longke.shot;
 
 
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -60,6 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import butterknife.ButterKnife;
@@ -127,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
     private int CONTINUE_TIME;
     TextView numTv;
     MqttAndroidClient mqttAndroidClient;
+    private ScheduledExecutorService scheduler;
 
     String serverUri = "tcp://120.76.153.166:1883";
 
@@ -170,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isRestart = false;
     private boolean isFromViSitor = false;
     List<Integer> listRadio = new ArrayList<Integer>();
+    MqttConnectOptions mqttConnectOptions;
     private boolean isConnnect;
     private boolean isShowOrder;
 
@@ -194,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
                     mReadyLayout.setBackgroundResource(R.mipmap.btn01);
                     mReadyLayout.setClickable(true);
                     mEndLayout.setBackgroundResource(R.drawable.gray_shape);
+                    mEndLayout.setClickable(false);
                     break;
                 case 2:
                     /** 倒计时60秒，一次1秒 */
@@ -276,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
     Timer timer2 = new Timer();
     private PopupWindow popupWindow;
     private View contentView;
+    private ConnectivityManager mConnectivityManager;
 
 
     @Override
@@ -415,6 +426,8 @@ public class MainActivity extends AppCompatActivity {
 //            }
 //        };
 //        videoUpdater.start();
+        mConnectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        registerReceiver(mConnectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
 
@@ -424,6 +437,15 @@ public class MainActivity extends AppCompatActivity {
         if (mMediaPlayer != null) {
             mMediaPlayer.release();
             mMediaPlayer = null;
+        }
+        timer1.cancel();
+        timer1=null;
+        timer2.cancel();
+        timer2=null;
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+            scheduler = null;
+
         }
 
 
@@ -539,9 +561,7 @@ public class MainActivity extends AppCompatActivity {
      * 建立连接
      */
     private void initConnection() {
-        if (isConnnect) {
-            return;
-        }
+
         clientId = clientId + System.currentTimeMillis();
 
         mqttAndroidClient = new MqttAndroidClient(getApplicationContext(), serverUri, clientId);
@@ -564,7 +584,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void connectionLost(Throwable cause) {
                 Log.e("longke", "The Connection was lost.");
-                // addToHistory("The Connection was lost.");
+                //连接丢失后，一般在这里面进行重连
+                if (isNetworkAvailable()) {
+                    reconnectIfNecessary();
+                }
             }
 
             @Override
@@ -579,37 +602,110 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
+         mqttConnectOptions = new MqttConnectOptions();
+        // 设置超时时间 单位为秒
+        mqttConnectOptions.setConnectionTimeout(10);
+        // 设置会话心跳时间 单位为秒 服务器会每隔1.5*20秒的时间向客户端发送个消息判断客户端是否在线，但这个方法并没有重连的机制
+        mqttConnectOptions.setKeepAliveInterval(20);
         mqttConnectOptions.setAutomaticReconnect(true);
         mqttConnectOptions.setCleanSession(false);
-        try {
-            mqttAndroidClient.connect(mqttConnectOptions, null, new IMqttActionListener() {
-                @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
+        startReconnect();
 
-                    DisconnectedBufferOptions disconnectedBufferOptions = new DisconnectedBufferOptions();
-                    disconnectedBufferOptions.setBufferEnabled(true);
-                    disconnectedBufferOptions.setBufferSize(100);
-                    disconnectedBufferOptions.setPersistBuffer(false);
-                    disconnectedBufferOptions.setDeleteOldestMessages(false);
-                    mqttAndroidClient.setBufferOpts(disconnectedBufferOptions);
-                    subscribeToTopic();
-                    subscribeToTopic1();
-                    subscribeToTopic2();//shot
-                    subscribeToTopic3();//shot
-                    InitData();//强制刷新
-                    isConnnect = true;
-                }
-
-                @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                }
-            });
-
-        } catch (MqttException ex) {
-            ex.printStackTrace();
+    }
+    /**
+     * Checkes the current connectivity
+     * and reconnects if it is required.
+     * 重新连接如果他是必须的
+     */
+    public synchronized void reconnectIfNecessary() {
+        if (mqttAndroidClient == null || !mqttAndroidClient.isConnected()) {
+            connect();
         }
     }
+
+    /**
+     * Query's the NetworkInfo via ConnectivityManager
+     * to return the current connected state
+     * 通过ConnectivityManager查询网络连接状态
+     *
+     * @return boolean true if we are connected false otherwise
+     * 如果网络状态正常则返回true反之flase
+     */
+    private boolean isNetworkAvailable() {
+        NetworkInfo info = mConnectivityManager.getActiveNetworkInfo();
+
+        return (info == null) ? false : info.isConnected();
+    }
+
+    private void connect() {
+        new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    mqttAndroidClient.connect(mqttConnectOptions, null, new IMqttActionListener() {
+                        @Override
+                        public void onSuccess(IMqttToken asyncActionToken) {
+
+                            DisconnectedBufferOptions disconnectedBufferOptions = new DisconnectedBufferOptions();
+                            disconnectedBufferOptions.setBufferEnabled(true);
+                            disconnectedBufferOptions.setBufferSize(100);
+                            disconnectedBufferOptions.setPersistBuffer(false);
+                            disconnectedBufferOptions.setDeleteOldestMessages(false);
+                            mqttAndroidClient.setBufferOpts(disconnectedBufferOptions);
+                            subscribeToTopic();
+                            subscribeToTopic1();
+                            subscribeToTopic2();//shot
+                            subscribeToTopic3();//shot
+                            InitData();//强制刷新
+                            isConnnect = true;
+                        }
+
+                        @Override
+                        public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                        }
+                    });
+
+                } catch (MqttException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    /**
+     *  调用init() 方法之后，调用此方法。
+     */
+    public void startReconnect() {
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(new Runnable() {
+
+            @Override
+            public void run() {
+                if (!mqttAndroidClient.isConnected() && isNetworkAvailable()) {
+                    connect();
+                }
+            }
+        }, 0 * 1000, 10 * 1000, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Receiver that listens for connectivity chanes
+     * via ConnectivityManager
+     * 网络状态发生变化接收器
+     */
+    private final BroadcastReceiver mConnectivityReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.i("BroadcastReceiver", "Connectivity Changed...");
+            if (!isNetworkAvailable()) {
+                Toast.makeText(context, "网络错误", Toast.LENGTH_SHORT).show();
+                scheduler.shutdownNow();
+            } else {
+                startReconnect();
+            }
+        }
+    };
 
     /**
      * 获取数据
@@ -721,7 +817,10 @@ public class MainActivity extends AppCompatActivity {
                             String MqttServerIP = object.getString("MqttServerIP");
                             String MqttPort = object.getString("MqttPort");
                             serverUri = "tcp://" + MqttServerIP + ":" + MqttPort;
-                            initConnection();
+                            if (mqttAndroidClient == null || !mqttAndroidClient.isConnected()) {
+                                initConnection();
+                            }
+
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -1455,11 +1554,10 @@ public class MainActivity extends AppCompatActivity {
 
             message.setPayload(gson.toJson(heartbeat).getBytes());
             if (mqttAndroidClient == null) {
-                initConnection();
+
                 return;
             }
             if (!mqttAndroidClient.isConnected()) {
-                initConnection();
                 return;
             }
             mqttAndroidClient.publish("Heartbeat", message);
@@ -1659,6 +1757,8 @@ public class MainActivity extends AppCompatActivity {
                 mShotBtn.setText("射击");
                 mReadyLayout.setBackgroundResource(R.mipmap.btn01);
                 mReadyLayout.setClickable(true);
+                mEndLayout.setBackgroundResource(R.drawable.gray_shape);
+                mEndLayout.setClickable(false);
                 mTitleTv.setText("自由模式");
                 ChangeMode(true);
             } else {
@@ -1666,6 +1766,8 @@ public class MainActivity extends AppCompatActivity {
                 mTitleTv.setText("考核模式");
                 mReadyLayout.setBackgroundResource(R.drawable.gray_shape);
                 mReadyLayout.setClickable(false);
+                mEndLayout.setBackgroundResource(R.drawable.gray_shape);
+                mEndLayout.setClickable(false);
                 ChangeMode(true);
             }
 
