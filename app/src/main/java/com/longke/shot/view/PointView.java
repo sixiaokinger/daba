@@ -11,6 +11,7 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import com.longke.shot.R;
+import com.longke.shot.SharedPreferencesUtil;
 import com.longke.shot.entity.Info;
 
 import java.util.ArrayList;
@@ -123,7 +124,13 @@ public class PointView extends View {
                 if(isShowRed){
                     mPaint.setColor(Color.parseColor("#0092FD"));
                     mPaint.setTextSize(20);
-                    canvas.drawText(shootDetailListBean.getBulletIndex()+"", shootDetailListBean.getX()*pre-shootDetailListBean.getWidth()*pre/2, shootDetailListBean.getY()*pre-shootDetailListBean.getHeight()*pre/2, mPaint);
+                    boolean showOrder = (boolean) SharedPreferencesUtil.get(this.getContext(), SharedPreferencesUtil.SHOW_OPTION, true);
+                    if (showOrder) {
+                        canvas.drawText(shootDetailListBean.getBulletIndex()+"", shootDetailListBean.getX()*pre-shootDetailListBean.getWidth()*pre/2, shootDetailListBean.getY()*pre-shootDetailListBean.getHeight()*pre/2, mPaint);
+                    }
+                    else {
+                        canvas.drawText(shootDetailListBean.getScore()+"", shootDetailListBean.getX()*pre-shootDetailListBean.getWidth()*pre/2, shootDetailListBean.getY()*pre-shootDetailListBean.getHeight()*pre/2, mPaint);
+                    }
                 }
 
             }
