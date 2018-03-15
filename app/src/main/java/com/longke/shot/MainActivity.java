@@ -35,6 +35,7 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.longke.shot.entity.Data;
 import com.longke.shot.entity.Heartbeat;
 import com.longke.shot.entity.Info;
 import com.longke.shot.media.IRenderView;
@@ -197,7 +198,12 @@ public class MainActivity extends AppCompatActivity {
                      获取数据，更新UI
                      */
                     tempList.clear();
-                    SpTools.putStringValue(MainActivity.this, info.getData().getStudentCode(), "");
+                    if (isViSitor.equals("1")) {
+                        SpTools.putStringValue(MainActivity.this, SharedPreferencesUtil.YOU_KE,"");
+                    } else {
+                        SpTools.putStringValue(MainActivity.this, SharedPreferencesUtil.KAO_HEI,"");
+                    }
+                   // SpTools.putStringValue(MainActivity.this, info.getData().getStudentCode(), "");
                     shotPoint.setTempShootDetailListBean(tempList);
 
                     mReadyLayout.setBackgroundResource(R.mipmap.btn01);
@@ -761,13 +767,23 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                             list = data.getShootDetailList();
-                            String temp = SpTools.getStringValue(MainActivity.this, info.getData().getStudentCode(), "");
+                            String temp="";
+                            if (isViSitor.equals("1")) {
+                                temp = SpTools.getStringValue(MainActivity.this, SharedPreferencesUtil.YOU_KE, "");
+                                //SpTools.putStringValue(MainActivity.this, SharedPreferencesUtil.YOU_KE,"");
+                            } else {
+                                temp = SpTools.getStringValue(MainActivity.this, SharedPreferencesUtil.KAO_HEI, "");
+                            }
+
                             if (!TextUtils.isEmpty(temp)) {
                                 Gson gson = new Gson();
-                                tempList = gson.fromJson(temp,
-                                        new TypeToken<List<Info.DataBean.ShootDetailListBean>>() {
-                                        }.getType());
-                                shotPoint.setTempShootDetailListBean(tempList);
+                                Data data1 = gson.fromJson(temp,
+                                        Data.class);
+                                if(info.getData().getStudentCode().equals(data1.getStudentCode())){
+                                    tempList=data1.getList();
+                                    shotPoint.setTempShootDetailListBean(tempList);
+                                }
+
 
                             } else {
                                 tempList = new ArrayList<Info.DataBean.ShootDetailListBean>();
@@ -938,15 +954,25 @@ public class MainActivity extends AppCompatActivity {
                         if (isNull) {
                             setVideoUri(false);
                         }
-                        String temp = SpTools.getStringValue(MainActivity.this, info.getData().getStudentCode(), "");
+                        String temp="";
+                        if (isViSitor.equals("1")) {
+                            temp = SpTools.getStringValue(MainActivity.this, SharedPreferencesUtil.YOU_KE, "");
+                            //SpTools.putStringValue(MainActivity.this, SharedPreferencesUtil.YOU_KE,"");
+                        } else {
+                            temp = SpTools.getStringValue(MainActivity.this, SharedPreferencesUtil.KAO_HEI, "");
+                        }
+
                         if (!TextUtils.isEmpty(temp)) {
                             Gson gson = new Gson();
-                            tempList = gson.fromJson(temp,
-                                    new TypeToken<List<Info.DataBean.ShootDetailListBean>>() {
-                                    }.getType());
-                            shotPoint.setTempShootDetailListBean(tempList);
+                            Data data1 = gson.fromJson(temp,
+                                    Data.class);
+                            if(info.getData().getStudentCode().equals(data1.getStudentCode())){
+                                tempList=data1.getList();
+                                shotPoint.setTempShootDetailListBean(tempList);
+                            }
 
-                        } else {
+
+                        }  else {
                             tempList.clear();
                             shotPoint.setTempShootDetailListBean(tempList);
                         }
@@ -1335,9 +1361,17 @@ public class MainActivity extends AppCompatActivity {
                                     bean.setHeight(object.getInt("Height"));
                                     bean.setScore(object.getInt("Score"));
                                     tempList.add(bean);
+                                    Data dataj=new Data();
+                                    dataj.setList(tempList);
+                                    dataj.setStudentCode(info.getData().getStudentCode());
                                     Gson gson = new Gson();
-                                    String a = gson.toJson(tempList);
-                                    SpTools.putStringValue(MainActivity.this, info.getData().getStudentCode(), a);
+                                    String a = gson.toJson(dataj);
+                                    if (isViSitor.equals("1")) {
+                                        SpTools.putStringValue(MainActivity.this, SharedPreferencesUtil.YOU_KE, a);
+                                    } else {
+                                        SpTools.putStringValue(MainActivity.this, SharedPreferencesUtil.KAO_HEI, a);
+                                    }
+
                                     Message msg = handler.obtainMessage();
                                     Bundle b = new Bundle();
                                     b.putInt("ID", -1);
