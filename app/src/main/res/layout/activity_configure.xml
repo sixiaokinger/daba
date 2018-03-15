@@ -25,6 +25,13 @@
             android:textColor="@color/title_text_color"
             android:textSize="35.0sp" />
 
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/color888888"
+            android:textSize="12sp" />
+
     </RelativeLayout>
 
     <View
