@@ -112,7 +112,7 @@ public class ConfigureActivity extends AppCompatActivity {
     }
     @OnClick(R.id.bt_quxiao)
     public void onClickCancel() {
-        startActivity(new Intent(ConfigureActivity.this, MainActivity.class));
+        setResult(RESULT_OK);
         finish();
     }
 }
